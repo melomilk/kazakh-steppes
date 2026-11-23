@@ -2,6 +2,8 @@
 // AIST 2026 Research — Betpak-Dala / Zhanaarka Steppe Degradation
 // Google Earth Engine code (code.earthengine.google.com)
 // ============================================================
+// v3 changes (Nov 2026): reflectance scaled by 1/10000 before index computation (fixes EVI);
+// sample points exported with coordinates; exports renamed *_v3. Search "FIX v3".
 
 // ------------------------------------------------------------
 // STEP 1: Basic NDVI visualization (exploration phase)
@@ -12,7 +14,8 @@ var image = ee.ImageCollection('COPERNICUS/S2_SR_HARMONIZED')
   .filterBounds(region)
   .filterDate('2023-06-01', '2023-08-31')
   .filter(ee.Filter.lt('CLOUDY_PIXEL_PERCENTAGE', 20))
-  .median();
+  .median()
+  .divide(10000); // FIX v3: S2_SR_HARMONIZED stores reflectance x10000; scale to 0-1 so EVI is valid
 
 var ndvi = image.normalizedDifference(['B8', 'B4']);
 
@@ -65,7 +68,8 @@ var image3 = ee.ImageCollection('COPERNICUS/S2_SR_HARMONIZED')
   .filterBounds(region3)
   .filterDate('2023-06-01', '2023-08-31')
   .filter(ee.Filter.lt('CLOUDY_PIXEL_PERCENTAGE', 20))
-  .median();
+  .median()
+  .divide(10000); // FIX v3: S2_SR_HARMONIZED stores reflectance x10000; scale to 0-1 so EVI is valid
 
 var ndvi3 = image3.normalizedDifference(['B8', 'B4']).rename('NDVI');
 
@@ -142,7 +146,8 @@ var img_betpak = ee.ImageCollection('COPERNICUS/S2_SR_HARMONIZED')
   .filterBounds(region_betpak)
   .filterDate('2023-06-01', '2023-08-31')
   .filter(ee.Filter.lt('CLOUDY_PIXEL_PERCENTAGE', 20))
-  .median();
+  .median()
+  .divide(10000); // FIX v3: S2_SR_HARMONIZED stores reflectance x10000; scale to 0-1 so EVI is valid
 
 var ndvi_b = img_betpak.normalizedDifference(['B8', 'B4']).rename('NDVI');
 var bsi_b = img_betpak.expression(
@@ -181,14 +186,14 @@ var samples_b = combined_b.stratifiedSample({
   region: region_betpak,
   scale: 100,
   seed: 42,
-  geometries: false
+  geometries: true   // FIX v3: keep point coordinates (needed for spatial CV + dataset release)
 });
 
 print('Betpak-Dala sample count:', samples_b.size());
 
 Export.table.toDrive({
   collection: samples_b,
-  description: 'betpak_samples_v2',
+  description: 'betpak_samples_v3',
   fileFormat: 'CSV'
 });
 
@@ -203,7 +208,8 @@ var img_zh = ee.ImageCollection('COPERNICUS/S2_SR_HARMONIZED')
   .filterBounds(region_zh)
   .filterDate('2023-06-01', '2023-08-31')
   .filter(ee.Filter.lt('CLOUDY_PIXEL_PERCENTAGE', 20))
-  .median();
+  .median()
+  .divide(10000); // FIX v3: S2_SR_HARMONIZED stores reflectance x10000; scale to 0-1 so EVI is valid
 
 var ndvi_zh = img_zh.normalizedDifference(['B8', 'B4']).rename('NDVI');
 var bsi_zh = img_zh.expression(
@@ -242,14 +248,14 @@ var samples_zh = combined_zh.stratifiedSample({
   region: region_zh,
   scale: 100,
   seed: 42,
-  geometries: false
+  geometries: true   // FIX v3: keep point coordinates (needed for spatial CV + dataset release)
 });
 
 print('Zhanaarka sample count:', samples_zh.size());
 
 Export.table.toDrive({
   collection: samples_zh,
-  description: 'zhanaarka_samples',
+  description: 'zhanaarka_samples_v3',
   fileFormat: 'CSV'
 });
 
